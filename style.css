@@ -1,17 +1,107 @@
 body {
-  background-color: #333;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
-  font-family: sans-serif;
-  color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #1a0033; /* Fundo roxo escuro */
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
 }
 
-canvas {
-  background: #eee;
-  display: block;
-  border: 2px solid #fff;
+.game-container {
+    width: 100%;
+    max-width: 600px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1a0033;
+    border-radius: 20px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    position: relative;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#gameCanvas {
+    background-color: #1a0033;
+    border-radius: 10px;
+    width: 100%;
+    height: 70vh; /* Altura ajustada para caber em dispositivos móveis */
+    margin-top: 20px;
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 20px 0;
+    font-size: 1.2em;
+}
+
+.lives-container {
+    display: flex;
+    align-items: center;
+}
+
+.lives-icon {
+    color: red;
+    margin-right: 5px;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 20px;
+}
+
+.control-btn {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 2em;
+    padding: 15px 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.control-btn:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #33144d;
+    padding: 40px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+#restartBtn {
+    padding: 10px 20px;
+    font-size: 1.2em;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    margin-top: 20px;
 }
