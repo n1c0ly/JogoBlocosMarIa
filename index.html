@@ -1,12 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Breakout</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quebra de Blocos</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Quebra-Blocos</h1>
-  <canvas id="gameCanvas" width="480" height="320"></canvas>
-  <script src="script.js"></script>
+    <div class="game-container">
+        <div class="game-info">
+            <span class="score">Pontos: 0</span>
+            <div class="lives-container">
+                <span class="lives-icon">❤️</span>
+                <span class="lives-text">x 3</span>
+            </div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="controls">
+            <button id="leftBtn" class="control-btn left-btn">←</button>
+            <button id="rightBtn" class="control-btn right-btn">→</button>
+        </div>
+    </div>
+    <div id="endGameModal" class="modal">
+        <div class="modal-content">
+            <h2 id="endGameMessage"></h2>
+            <button id="restartBtn">Recomeçar</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
