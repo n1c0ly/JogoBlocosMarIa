@@ -30,21 +30,21 @@ let balls = [];
 const blockInfo = {
     rows: 4,
     cols: 8,
-    width: 0, // Será calculado dinamicamente
+    width: 0,
     height: 25,
     padding: 10,
     offsetTop: 50,
-    offsetLeft: 0 // Será calculado dinamicamente
+    offsetLeft: 0
 };
 
-// Tipos de blocos (cores e bônus)
+// Tipos de blocos (cores, bônus e ícones)
 const blockTypes = {
-    green: { color: '#00cc66', bonus: null },
-    pink: { color: '#ff3366', bonus: 'extraLife' },
-    blue: { color: '#00ace6', bonus: 'multiBall' },
-    white: { color: '#ffffff', bonus: 'slowPaddle' },
-    purple: { color: '#9900ff', bonus: 'enlargePaddle' }, // Novo bônus
-    orange: { color: '#ff6600', bonus: 'shrinkPaddle' }   // Novo bônus
+    green: { color: '#00cc66', bonus: null, icon: null },
+    pink: { color: '#ff3366', bonus: 'extraLife', icon: '❤️' },
+    blue: { color: '#00ace6', bonus: 'multiBall', icon: '⚽' },
+    white: { color: '#ffffff', bonus: 'strong', icon: '🧱' },
+    purple: { color: '#9900ff', bonus: 'enlargePaddle', icon: '↔️' },
+    orange: { color: '#ff6600', bonus: 'shrinkPaddle', icon: '↕️' }
 };
 
 let blocks = [];
@@ -54,7 +54,6 @@ function init() {
     canvas.width = gameArea.clientWidth;
     canvas.height = gameArea.clientHeight;
 
-    // Calcular as propriedades dos blocos para preencher o canvas
     blockInfo.width = (canvas.width - blockInfo.padding * (blockInfo.cols - 1)) / blockInfo.cols;
     blockInfo.offsetLeft = 0;
 
@@ -70,12 +69,11 @@ function init() {
 
 function createBlocks() {
     blocks = [];
-    // Ordem dos blocos para embaralhar
     const blockOrder = [
-        'green', 'pink', 'blue', 'white', 'purple', 'orange', 'green', 'pink',
-        'blue', 'white', 'purple', 'orange', 'green', 'pink', 'blue', 'white',
-        'green', 'pink', 'blue', 'white', 'purple', 'orange', 'green', 'pink',
-        'blue', 'white', 'purple', 'orange', 'green', 'pink', 'blue', 'white'
+        'white', 'green', 'pink', 'blue', 'purple', 'orange', 'green', 'white',
+        'green', 'blue', 'pink', 'white', 'orange', 'purple', 'blue', 'green',
+        'pink', 'white', 'orange', 'purple', 'green', 'blue', 'white', 'pink',
+        'orange', 'purple', 'green', 'blue', 'pink', 'white', 'orange', 'purple'
     ];
     const shuffledOrder = shuffleArray(blockOrder);
 
@@ -90,7 +88,7 @@ function createBlocks() {
                 y,
                 status: 1,
                 type: type,
-                lives: type === 'white' ? 2 : 1
+                lives: type === 'white' ? 2 : 1 // Bloco branco (obstáculo) requer 2 hits
             });
         }
     }
@@ -139,6 +137,16 @@ function drawBlocks() {
             ctx.fillStyle = blockTypes[block.type].color;
             ctx.fill();
             ctx.closePath();
+
+            // Desenhar ícones de bônus ou obstáculos
+            const icon = blockTypes[block.type].icon;
+            if (icon) {
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(icon, block.x + blockInfo.width / 2, block.y + blockInfo.height / 2);
+            }
         }
     }
 }
@@ -199,13 +207,10 @@ function update() {
                             updateLivesDisplay();
                         } else if (block.type === 'multiBall') {
                             createBall();
-                        } else if (block.type === 'slowPaddle') {
-                            paddle.speed = 3;
-                            setTimeout(() => { paddle.speed = 7; }, 5000);
-                        } else if (block.type === 'enlargePaddle') { // Novo bônus
+                        } else if (block.type === 'enlargePaddle') {
                             paddle.width = 150;
                             setTimeout(() => { paddle.width = defaultPaddleWidth; }, 5000);
-                        } else if (block.type === 'shrinkPaddle') { // Novo bônus
+                        } else if (block.type === 'shrinkPaddle') {
                             paddle.width = 50;
                             setTimeout(() => { paddle.width = defaultPaddleWidth; }, 5000);
                         }
