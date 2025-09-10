@@ -2,8 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const leftBtn = document.getElementById('leftBtn');
 const rightBtn = document.getElementById('rightBtn');
-const scoreDisplay = document.querySelector('.score');
-const livesText = document.querySelector('.lives-text');
+const livesContainer = document.querySelector('.lives');
 const endGameModal = document.getElementById('endGameModal');
 const endGameMessage = document.getElementById('endGameMessage');
 const restartBtn = document.getElementById('restartBtn');
@@ -23,15 +22,8 @@ const paddle = {
     speed: 7
 };
 
-// Propriedades da bola
-const ball = {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    size: 10,
-    speed: 5,
-    dx: 5,
-    dy: -5
-};
+// Array de bolas
+let balls = [];
 
 // Propriedades dos blocos
 const blockInfo = {
@@ -46,44 +38,62 @@ const blockInfo = {
 
 // Tipos de blocos (cores e bônus)
 const blockTypes = {
-    default: { color: '#00cc66', bonus: null }, // Verde
-    strong: { color: '#ffffff', bonus: 'strong' }, // Branco (resistente)
-    extraLife: { color: '#ff3366', bonus: 'extraLife' }, // Rosa (vida extra)
-    fastBall: { color: '#00cc66', bonus: 'fastBall' }, // Verde (bola rápida)
-    slowBall: { color: '#00cc66', bonus: 'slowBall' } // Verde (bola lenta)
+    green: { color: '#00cc66', bonus: null },
+    pink: { color: '#ff3366', bonus: 'extraLife' },
+    blue: { color: '#00ace6', bonus: 'multiBall' },
+    white: { color: '#ffffff', bonus: 'slowPaddle' }
 };
 
-// Armazenamento dos blocos
 let blocks = [];
 
+// Inicializa o jogo e ajusta o canvas
+function init() {
+    const gameArea = document.querySelector('.game-area');
+    canvas.width = gameArea.clientWidth;
+    canvas.height = gameArea.clientHeight;
+
+    paddle.x = canvas.width / 2 - paddle.width / 2;
+    paddle.y = canvas.height - 50;
+
+    createBlocks();
+    createBall();
+    updateLivesDisplay();
+    update();
+}
+
 function createBlocks() {
-    blocks = []; // Limpa os blocos antigos
-    const blockOrder = ['default', 'default', 'extraLife', 'default', 'fastBall', 'default', 'default', 'default',
-                        'default', 'strong', 'default', 'default', 'default', 'slowBall', 'default', 'default',
-                        'default', 'default', 'default', 'default', 'default', 'default', 'default', 'default',
-                        'default', 'strong', 'default', 'default', 'default', 'default', 'default', 'default'];
+    blocks = [];
+    const blockColors = ['white', 'green', 'pink', 'blue', 'green', 'pink', 'blue', 'white'];
+    const shuffledColors = shuffleArray(blockColors);
 
-    const shuffledBlocks = shuffleArray(blockOrder);
-
-    for (let c = 0; c < blockInfo.cols; c++) {
-        blocks[c] = [];
-        for (let r = 0; r < blockInfo.rows; r++) {
-            const index = r * blockInfo.cols + c;
-            const type = shuffledBlocks[index];
+    for (let r = 0; r < blockInfo.rows; r++) {
+        for (let c = 0; c < blockInfo.cols; c++) {
+            const type = shuffledColors[c % shuffledColors.length]; // Usa o array embaralhado
             const x = c * (blockInfo.width + blockInfo.padding) + blockInfo.offsetLeft;
             const y = r * (blockInfo.height + blockInfo.padding) + blockInfo.offsetTop;
-            blocks[c][r] = {
+            blocks.push({
                 x,
                 y,
                 status: 1,
                 type: type,
-                lives: type === 'strong' ? 2 : 1 // Blocos brancos precisam de 2 hits
-            };
+                lives: type === 'white' ? 2 : 1
+            });
         }
     }
 }
 
-// Embaralha o array para randomizar a posição dos bônus
+// Cria uma nova bola
+function createBall() {
+    balls.push({
+        x: paddle.x + paddle.width / 2,
+        y: paddle.y - 10,
+        size: 10,
+        speed: 5,
+        dx: 5,
+        dy: -5
+    });
+}
+
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -92,16 +102,15 @@ function shuffleArray(array) {
     return array;
 }
 
-// Funções de desenho
 function drawPaddle() {
     ctx.beginPath();
     ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 5);
-    ctx.fillStyle = '#6666ff'; // Roxo claro
+    ctx.fillStyle = '#6666ff';
     ctx.fill();
     ctx.closePath();
 }
 
-function drawBall() {
+function drawBall(ball) {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2);
     ctx.fillStyle = 'white';
@@ -110,58 +119,26 @@ function drawBall() {
 }
 
 function drawBlocks() {
-    for (let c = 0; c < blockInfo.cols; c++) {
-        for (let r = 0; r < blockInfo.rows; r++) {
-            const block = blocks[c][r];
-            if (block.status === 1) {
-                let color = blockTypes[block.type].color;
-                if (block.type === 'strong' && block.lives === 1) {
-                    // Mudar a cor do bloco branco após o primeiro hit
-                    color = '#b0b0b0'; 
-                }
-                ctx.beginPath();
-                ctx.rect(block.x, block.y, blockInfo.width, blockInfo.height);
-                ctx.fillStyle = color;
-                ctx.fill();
-                ctx.closePath();
-                // Adicionar ícones aos blocos especiais
-                if (block.type === 'extraLife') {
-                    ctx.fillStyle = 'red';
-                    ctx.font = '20px Arial';
-                    ctx.fillText('❤', block.x + blockInfo.width / 2 - 8, block.y + blockInfo.height / 2 + 8);
-                } else if (block.type === 'strong') {
-                    // Desenho da parede de tijolos
-                    ctx.fillStyle = '#666666';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(block.x, block.y, blockInfo.width, blockInfo.height);
-                } else if (block.type === 'fastBall') {
-                    ctx.fillStyle = 'white';
-                    ctx.font = '20px Arial';
-                    ctx.fillText('•', block.x + blockInfo.width / 2 - 4, block.y + blockInfo.height / 2 + 6);
-                } else if (block.type === 'slowBall') {
-                    ctx.fillStyle = 'white';
-                    ctx.font = '20px Arial';
-                    ctx.fillText('•', block.x + blockInfo.width / 2 - 4, block.y + blockInfo.height / 2 + 6);
-                }
-            }
+    for (const block of blocks) {
+        if (block.status === 1) {
+            ctx.beginPath();
+            ctx.rect(block.x, block.y, blockInfo.width, blockInfo.height);
+            ctx.fillStyle = blockTypes[block.type].color;
+            ctx.fill();
+            ctx.closePath();
         }
     }
 }
 
-// Funções de atualização
 function update() {
     if (gamePaused) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    
     drawBlocks();
     drawPaddle();
-    drawBall();
 
-    // Mover a raquete
     paddle.x += paddle.dx;
-
-    // Colisão da raquete com as bordas
     if (paddle.x + paddle.width > canvas.width) {
         paddle.x = canvas.width - paddle.width;
     }
@@ -169,27 +146,27 @@ function update() {
         paddle.x = 0;
     }
 
-    // Mover a bola
-    ball.x += ball.dx;
-    ball.y += ball.dy;
+    // Lógica para cada bola
+    balls.forEach((ball, index) => {
+        ball.x += ball.dx;
+        ball.y += ball.dy;
 
-    // Colisão da bola com as bordas
-    if (ball.x + ball.size > canvas.width || ball.x - ball.size < 0) {
-        ball.dx *= -1;
-    }
-    if (ball.y - ball.size < 0) {
-        ball.dy *= -1;
-    }
+        // Colisão com as bordas
+        if (ball.x + ball.size > canvas.width || ball.x - ball.size < 0) {
+            ball.dx *= -1;
+        }
+        if (ball.y - ball.size < 0) {
+            ball.dy *= -1;
+        }
 
-    // Colisão da bola com a raquete
-    if (ball.y + ball.size > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
-        ball.dy *= -1;
-    }
+        // Colisão com a raquete
+        if (ball.y + ball.size > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+            ball.dy *= -1;
+        }
 
-    // Colisão da bola com os blocos
-    for (let c = 0; c < blockInfo.cols; c++) {
-        for (let r = 0; r < blockInfo.rows; r++) {
-            const block = blocks[c][r];
+        // Colisão com os blocos
+        for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
             if (block.status === 1) {
                 const isColliding = ball.x + ball.size > block.x &&
                                     ball.x - ball.size < block.x + blockInfo.width &&
@@ -199,54 +176,62 @@ function update() {
                 if (isColliding) {
                     ball.dy *= -1;
                     
-                    if (block.type === 'strong' && block.lives > 1) {
+                    if (block.type === 'white' && block.lives > 1) {
                         block.lives--;
                     } else {
                         block.status = 0;
                         score += 10;
-                        scoreDisplay.textContent = `Pontos: ${score}`;
-
+                        
                         // Ativar bônus
                         if (block.type === 'extraLife') {
                             lives++;
-                            livesText.textContent = `x ${lives}`;
-                        } else if (block.type === 'fastBall') {
-                            ball.speed = 8;
-                        } else if (block.type === 'slowBall') {
-                            ball.speed = 3;
+                            updateLivesDisplay();
+                        } else if (block.type === 'multiBall') {
+                            createBall();
+                        } else if (block.type === 'slowPaddle') {
+                            paddle.speed = 3;
+                            setTimeout(() => { paddle.speed = 7; }, 5000); // Reverte após 5s
                         }
-                    }
-
-                    // Checar se o jogo terminou
-                    const allBlocksDestroyed = blocks.every(col => col.every(b => b.status === 0));
-                    if (allBlocksDestroyed) {
-                        endGame(true);
                     }
                 }
             }
         }
-    }
+        drawBall(ball);
+    });
 
-    // Perder uma vida
-    if (ball.y + ball.size > canvas.height) {
+    // Remove bolas que caem
+    balls = balls.filter(ball => ball.y < canvas.height);
+
+    if (balls.length === 0) {
         lives--;
-        livesText.textContent = `x ${lives}`;
+        updateLivesDisplay();
         if (lives === 0) {
             endGame(false);
         } else {
-            // Resetar a posição da bola e da raquete
-            ball.x = canvas.width / 2;
-            ball.y = canvas.height / 2;
-            ball.dx = ball.speed;
-            ball.dy = -ball.speed;
-            paddle.x = canvas.width / 2 - 50;
+            createBall();
         }
     }
 
+    const allBlocksDestroyed = blocks.every(b => b.status === 0);
+    if (allBlocksDestroyed) {
+        endGame(true);
+    }
+    
     requestAnimationFrame(update);
 }
 
-// Funções de controle
+// Atualiza o display de vidas no HTML
+function updateLivesDisplay() {
+    livesContainer.innerHTML = '';
+    for (let i = 0; i < lives; i++) {
+        const heart = document.createElement('span');
+        heart.className = 'heart-icon';
+        heart.innerHTML = '❤️';
+        livesContainer.appendChild(heart);
+    }
+}
+
+// Controles
 document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' || e.key === 'd') {
         paddle.dx = paddle.speed;
@@ -254,20 +239,28 @@ document.addEventListener('keydown', e => {
         paddle.dx = -paddle.speed;
     }
 });
-
 document.addEventListener('keyup', e => {
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'ArrowLeft' || e.key === 'a') {
         paddle.dx = 0;
     }
 });
 
-// Controles para mobile
-leftBtn.addEventListener('touchstart', () => { paddle.dx = -paddle.speed; });
+leftBtn.addEventListener('mousedown', () => { paddle.dx = -paddle.speed; });
+leftBtn.addEventListener('mouseup', () => { paddle.dx = 0; });
+rightBtn.addEventListener('mousedown', () => { paddle.dx = paddle.speed; });
+rightBtn.addEventListener('mouseup', () => { paddle.dx = 0; });
+
+leftBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    paddle.dx = -paddle.speed;
+});
 leftBtn.addEventListener('touchend', () => { paddle.dx = 0; });
-rightBtn.addEventListener('touchstart', () => { paddle.dx = paddle.speed; });
+rightBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    paddle.dx = paddle.speed;
+});
 rightBtn.addEventListener('touchend', () => { paddle.dx = 0; });
 
-// Função para terminar o jogo
 function endGame(win) {
     gamePaused = true;
     endGameModal.style.display = 'flex';
@@ -278,44 +271,16 @@ function endGame(win) {
     }
 }
 
-// Função para reiniciar o jogo
 function restartGame() {
     score = 0;
     lives = 3;
-    scoreDisplay.textContent = `Pontos: ${score}`;
-    livesText.textContent = `x ${lives}`;
-    ball.speed = 5;
-    createBlocks();
+    balls = [];
     endGameModal.style.display = 'none';
     gamePaused = false;
-    // Resetar a posição da bola e da raquete
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height / 2;
-    ball.dx = ball.speed;
-    ball.dy = -ball.speed;
-    paddle.x = canvas.width / 2 - 50;
-    requestAnimationFrame(update);
+    init();
 }
 
 restartBtn.addEventListener('click', restartGame);
 
-// Inicia o jogo
-function init() {
-    // Ajustar o tamanho do canvas para a tela do dispositivo
-    const gameContainer = document.querySelector('.game-container');
-    canvas.width = gameContainer.clientWidth - 40;
-    canvas.height = gameContainer.clientHeight * 0.7;
-
-    // Resetar as posições da raquete e da bola para o novo tamanho do canvas
-    paddle.x = canvas.width / 2 - paddle.width / 2;
-    paddle.y = canvas.height - 30;
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height / 2;
-    
-    createBlocks();
-    update();
-}
-
-// Inicializa o jogo quando a janela carregar
 window.onload = init;
 window.addEventListener('resize', init);
