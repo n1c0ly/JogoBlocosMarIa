@@ -54,6 +54,7 @@ function init() {
     canvas.width = gameArea.clientWidth;
     canvas.height = gameArea.clientHeight;
 
+    // Calcular as propriedades dos blocos para preencher o canvas
     blockInfo.width = (canvas.width - blockInfo.padding * (blockInfo.cols - 1)) / blockInfo.cols;
     blockInfo.offsetLeft = 0;
 
@@ -88,7 +89,7 @@ function createBlocks() {
                 y,
                 status: 1,
                 type: type,
-                lives: type === 'white' ? 2 : 1 // Bloco branco (obstáculo) requer 2 hits
+                lives: type === 'white' ? 2 : 1
             });
         }
     }
@@ -115,7 +116,8 @@ function shuffleArray(array) {
 
 function drawPaddle() {
     ctx.beginPath();
-    ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 5);
+    // Use roundRect para bordas arredondadas
+    ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, [5, 5, 5, 5]);
     ctx.fillStyle = '#6666ff';
     ctx.fill();
     ctx.closePath();
@@ -133,12 +135,12 @@ function drawBlocks() {
     for (const block of blocks) {
         if (block.status === 1) {
             ctx.beginPath();
-            ctx.rect(block.x, block.y, blockInfo.width, blockInfo.height);
+            // Use roundRect para bordas arredondadas
+            ctx.roundRect(block.x, block.y, blockInfo.width, blockInfo.height, [5, 5, 5, 5]);
             ctx.fillStyle = blockTypes[block.type].color;
             ctx.fill();
             ctx.closePath();
 
-            // Desenhar ícones de bônus ou obstáculos
             const icon = blockTypes[block.type].icon;
             if (icon) {
                 ctx.fillStyle = 'white';
@@ -202,16 +204,18 @@ function update() {
                         block.status = 0;
                         score += 10;
                         
+                        // Ativar o bônus ou obstáculo
                         if (block.type === 'extraLife') {
                             lives++;
                             updateLivesDisplay();
                         } else if (block.type === 'multiBall') {
                             createBall();
+                            createBall(); // Adiciona 2 bolas para aumentar a dificuldade
                         } else if (block.type === 'enlargePaddle') {
-                            paddle.width = 150;
+                            paddle.width = defaultPaddleWidth * 1.5;
                             setTimeout(() => { paddle.width = defaultPaddleWidth; }, 5000);
                         } else if (block.type === 'shrinkPaddle') {
-                            paddle.width = 50;
+                            paddle.width = defaultPaddleWidth * 0.5;
                             setTimeout(() => { paddle.width = defaultPaddleWidth; }, 5000);
                         }
                     }
