@@ -8,17 +8,30 @@
 </head>
 <body>
     <div class="game-container">
-        <div class="game-info">
-            <span class="score">Pontos: 0</span>
-            <div class="lives-container">
-                <span class="lives-icon">❤️</span>
-                <span class="lives-text">x 3</span>
+        <div class="top-bar">
+            <span class="version-text">iPhone 13 & 14 - 8</span>
+            <div class="pause-icon">
+                <img src="https://i.ibb.co/C07Bf5L/pause-icon.png" alt="Pause">
             </div>
         </div>
-        <canvas id="gameCanvas"></canvas>
-        <div class="controls">
-            <button id="leftBtn" class="control-btn left-btn">←</button>
-            <button id="rightBtn" class="control-btn right-btn">→</button>
+        <div class="game-area">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+        <div class="bottom-bar">
+            <div class="controls-container">
+                <button id="leftBtn" class="control-btn left-btn">←</button>
+            </div>
+            <div class="info-center">
+                <div class="lives">
+                    <span class="heart-icon">❤️</span>
+                    <span class="heart-icon">❤️</span>
+                    <span class="heart-icon">❤️</span>
+                </div>
+                <div class="info-text">vidas</div>
+            </div>
+            <div class="controls-container">
+                <button id="rightBtn" class="control-btn right-btn">→</button>
+            </div>
         </div>
     </div>
     <div id="endGameModal" class="modal">
