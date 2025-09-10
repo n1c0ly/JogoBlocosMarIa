@@ -53,7 +53,7 @@ body {
     flex-grow: 1;
     width: 100%;
     position: relative;
-    padding: 0 10px; /* Adiciona um pequeno padding para as bordas do canvas */
+    padding: 0 10px;
 }
 
 #gameCanvas {
