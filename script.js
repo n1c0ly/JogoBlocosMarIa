@@ -6,6 +6,7 @@ const livesContainer = document.querySelector('.lives');
 const endGameModal = document.getElementById('endGameModal');
 const endGameMessage = document.getElementById('endGameMessage');
 const restartBtn = document.getElementById('restartBtn');
+const pauseBtn = document.getElementById('pauseBtn');
 
 // Variáveis do jogo
 let gamePaused = false;
@@ -14,26 +15,26 @@ let lives = 3;
 
 // Propriedades da raquete
 const paddle = {
-    x: canvas.width / 2 - 50,
-    y: canvas.height - 30,
+    x: 0,
+    y: 0,
     width: 100,
     height: 15,
     dx: 0,
     speed: 7
 };
+const defaultPaddleWidth = 100;
 
-// Array de bolas
 let balls = [];
 
 // Propriedades dos blocos
 const blockInfo = {
     rows: 4,
     cols: 8,
-    width: 60,
+    width: 0, // Será calculado dinamicamente
     height: 25,
     padding: 10,
     offsetTop: 50,
-    offsetLeft: 30
+    offsetLeft: 0 // Será calculado dinamicamente
 };
 
 // Tipos de blocos (cores e bônus)
@@ -41,17 +42,23 @@ const blockTypes = {
     green: { color: '#00cc66', bonus: null },
     pink: { color: '#ff3366', bonus: 'extraLife' },
     blue: { color: '#00ace6', bonus: 'multiBall' },
-    white: { color: '#ffffff', bonus: 'slowPaddle' }
+    white: { color: '#ffffff', bonus: 'slowPaddle' },
+    purple: { color: '#9900ff', bonus: 'enlargePaddle' }, // Novo bônus
+    orange: { color: '#ff6600', bonus: 'shrinkPaddle' }   // Novo bônus
 };
 
 let blocks = [];
 
-// Inicializa o jogo e ajusta o canvas
 function init() {
     const gameArea = document.querySelector('.game-area');
     canvas.width = gameArea.clientWidth;
     canvas.height = gameArea.clientHeight;
 
+    // Calcular as propriedades dos blocos para preencher o canvas
+    blockInfo.width = (canvas.width - blockInfo.padding * (blockInfo.cols - 1)) / blockInfo.cols;
+    blockInfo.offsetLeft = 0;
+
+    paddle.width = defaultPaddleWidth;
     paddle.x = canvas.width / 2 - paddle.width / 2;
     paddle.y = canvas.height - 50;
 
@@ -63,12 +70,19 @@ function init() {
 
 function createBlocks() {
     blocks = [];
-    const blockColors = ['white', 'green', 'pink', 'blue', 'green', 'pink', 'blue', 'white'];
-    const shuffledColors = shuffleArray(blockColors);
+    // Ordem dos blocos para embaralhar
+    const blockOrder = [
+        'green', 'pink', 'blue', 'white', 'purple', 'orange', 'green', 'pink',
+        'blue', 'white', 'purple', 'orange', 'green', 'pink', 'blue', 'white',
+        'green', 'pink', 'blue', 'white', 'purple', 'orange', 'green', 'pink',
+        'blue', 'white', 'purple', 'orange', 'green', 'pink', 'blue', 'white'
+    ];
+    const shuffledOrder = shuffleArray(blockOrder);
 
     for (let r = 0; r < blockInfo.rows; r++) {
         for (let c = 0; c < blockInfo.cols; c++) {
-            const type = shuffledColors[c % shuffledColors.length]; // Usa o array embaralhado
+            const index = r * blockInfo.cols + c;
+            const type = shuffledOrder[index];
             const x = c * (blockInfo.width + blockInfo.padding) + blockInfo.offsetLeft;
             const y = r * (blockInfo.height + blockInfo.padding) + blockInfo.offsetTop;
             blocks.push({
@@ -82,7 +96,6 @@ function createBlocks() {
     }
 }
 
-// Cria uma nova bola
 function createBall() {
     balls.push({
         x: paddle.x + paddle.width / 2,
@@ -131,7 +144,10 @@ function drawBlocks() {
 }
 
 function update() {
-    if (gamePaused) return;
+    if (gamePaused) {
+        requestAnimationFrame(update);
+        return;
+    }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -146,12 +162,10 @@ function update() {
         paddle.x = 0;
     }
 
-    // Lógica para cada bola
     balls.forEach((ball, index) => {
         ball.x += ball.dx;
         ball.y += ball.dy;
 
-        // Colisão com as bordas
         if (ball.x + ball.size > canvas.width || ball.x - ball.size < 0) {
             ball.dx *= -1;
         }
@@ -159,12 +173,10 @@ function update() {
             ball.dy *= -1;
         }
 
-        // Colisão com a raquete
         if (ball.y + ball.size > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
             ball.dy *= -1;
         }
 
-        // Colisão com os blocos
         for (let i = 0; i < blocks.length; i++) {
             const block = blocks[i];
             if (block.status === 1) {
@@ -182,7 +194,6 @@ function update() {
                         block.status = 0;
                         score += 10;
                         
-                        // Ativar bônus
                         if (block.type === 'extraLife') {
                             lives++;
                             updateLivesDisplay();
@@ -190,7 +201,13 @@ function update() {
                             createBall();
                         } else if (block.type === 'slowPaddle') {
                             paddle.speed = 3;
-                            setTimeout(() => { paddle.speed = 7; }, 5000); // Reverte após 5s
+                            setTimeout(() => { paddle.speed = 7; }, 5000);
+                        } else if (block.type === 'enlargePaddle') { // Novo bônus
+                            paddle.width = 150;
+                            setTimeout(() => { paddle.width = defaultPaddleWidth; }, 5000);
+                        } else if (block.type === 'shrinkPaddle') { // Novo bônus
+                            paddle.width = 50;
+                            setTimeout(() => { paddle.width = defaultPaddleWidth; }, 5000);
                         }
                     }
                 }
@@ -199,7 +216,6 @@ function update() {
         drawBall(ball);
     });
 
-    // Remove bolas que caem
     balls = balls.filter(ball => ball.y < canvas.height);
 
     if (balls.length === 0) {
@@ -220,7 +236,6 @@ function update() {
     requestAnimationFrame(update);
 }
 
-// Atualiza o display de vidas no HTML
 function updateLivesDisplay() {
     livesContainer.innerHTML = '';
     for (let i = 0; i < lives; i++) {
@@ -229,6 +244,10 @@ function updateLivesDisplay() {
         heart.innerHTML = '❤️';
         livesContainer.appendChild(heart);
     }
+}
+
+function togglePause() {
+    gamePaused = !gamePaused;
 }
 
 // Controles
@@ -245,11 +264,6 @@ document.addEventListener('keyup', e => {
     }
 });
 
-leftBtn.addEventListener('mousedown', () => { paddle.dx = -paddle.speed; });
-leftBtn.addEventListener('mouseup', () => { paddle.dx = 0; });
-rightBtn.addEventListener('mousedown', () => { paddle.dx = paddle.speed; });
-rightBtn.addEventListener('mouseup', () => { paddle.dx = 0; });
-
 leftBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     paddle.dx = -paddle.speed;
@@ -260,6 +274,8 @@ rightBtn.addEventListener('touchstart', (e) => {
     paddle.dx = paddle.speed;
 });
 rightBtn.addEventListener('touchend', () => { paddle.dx = 0; });
+
+pauseBtn.addEventListener('click', togglePause);
 
 function endGame(win) {
     gamePaused = true;
